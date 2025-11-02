@@ -31,7 +31,7 @@ public class PncHeatEmiWidget extends Widget {
         this.width = element.getWidth();
         this.height = element.getHeight();
         
-        int temperature = wrapper.getAmount() + 273;
+        int temperature = wrapper.amount() + 273;
         this.temperatureWidget = new WidgetTemperature(0, 0, TemperatureRange.of(273, 373), temperature, 10);
         this.temperatureWidget.autoScaleForTemperature();
         this.temperatureWidget.setX(x);
@@ -56,10 +56,10 @@ public class PncHeatEmiWidget extends Widget {
     @Override
     public List<ClientTooltipComponent> getTooltip(int mouseX, int mouseY) {
         List<Component> tooltips = new ArrayList<>();
-        String amount = Utils.format(wrapper.getAmount());
+        String amount = Utils.format(wrapper.amount());
         
         if (wrapper.isPerTick()) {
-            String totalHeat = Utils.format(wrapper.getAmount() * recipeTime);
+            String totalHeat = Utils.format(wrapper.amount() * recipeTime);
             if (wrapper.isInput()) {
                 tooltips.add(Component.translatable("custommachinerypnc.jei.ingredient.heat.pertick.input", totalHeat, amount));
             } else {
@@ -73,7 +73,7 @@ public class PncHeatEmiWidget extends Widget {
             }
         }
 
-        return getClientTooltipComponents(tooltips, wrapper.getChance());
+        return getClientTooltipComponents(tooltips, wrapper.chance());
     }
 
     @NotNull

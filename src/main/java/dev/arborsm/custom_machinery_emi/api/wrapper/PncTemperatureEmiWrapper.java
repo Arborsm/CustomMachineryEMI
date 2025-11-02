@@ -4,20 +4,11 @@ import dev.arborsm.custom_machinery_emi.api.EmiIngredientWrapper;
 import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
 import fr.frinn.custommachinery.impl.util.IntRange;
 
-public class PncTemperatureEmiWrapper implements EmiIngredientWrapper {
-    private final IntRange range;
-    
-    public PncTemperatureEmiWrapper(IntRange range) {
-        this.range = range;
-    }
-    
+public record PncTemperatureEmiWrapper(IntRange range) implements EmiIngredientWrapper {
+
     @Override
-    public RequirementIOMode getMode() {
+    public RequirementIOMode mode() {
         return RequirementIOMode.INPUT;
-    }
-    
-    public IntRange getRange() {
-        return range;
     }
 }
 

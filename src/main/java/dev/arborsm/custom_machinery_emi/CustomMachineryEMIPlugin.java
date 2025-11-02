@@ -17,6 +17,7 @@ import fr.frinn.custommachinery.common.init.CustomMachineItem;
 import fr.frinn.custommachinery.common.init.Registration;
 import fr.frinn.custommachinery.common.machine.CustomMachine;
 import fr.frinn.custommachinery.common.util.Comparators;
+import fr.frinn.custommachinery.impl.integration.jei.GuiElementJEIRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -24,6 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.neoforged.fml.ModList;
 
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +46,10 @@ public class CustomMachineryEMIPlugin implements EmiPlugin {
                 .map(Item::getDefaultInstance)
                 .filter(stack -> stack.getBurnTime(RecipeType.SMELTING) > 0)
                 .forEach(FUEL_INGREDIENTS::add);
+        
+        if (!ModList.get().isLoaded("jei")) {
+            GuiElementJEIRendererRegistry.init();
+        }
         
         CustomMachinery.LOGGER.info("EMI Plugin initialized with {} fuel ingredients", FUEL_INGREDIENTS.size());
     }
@@ -114,23 +120,21 @@ public class CustomMachineryEMIPlugin implements EmiPlugin {
         });
 
         // Register workstations (catalysts)
-        CustomMachinery.MACHINES.forEach((id, machine) ->   {
-            machine.getRecipeIds().forEach(recipeId -> {
-                EmiRecipeCategory category = EMIRecipeTypes.fromID(recipeId);
-                if(category != null) {
-                    List<ResourceLocation> catalysts = machine.getCatalysts();
-                    if(!catalysts.contains(id)) {
-                        registry.addWorkstation(category, EmiStack.of(CustomMachineItem.makeMachineItem(id)));
-                    }
-                    machine.getCatalysts().forEach(catalyst -> {
-                        if(CustomMachinery.MACHINES.containsKey(catalyst)) {
-                            registry.addWorkstation(category, EmiStack.of(CustomMachineItem.makeMachineItem(catalyst)));
-                        } else if(BuiltInRegistries.ITEM.containsKey(catalyst)) {
-                            registry.addWorkstation(category, EmiStack.of(BuiltInRegistries.ITEM.get(catalyst).getDefaultInstance()));
-                        }
-                    });
+        CustomMachinery.MACHINES.forEach((id, machine) -> machine.getRecipeIds().forEach(recipeId -> {
+            EmiRecipeCategory category = EMIRecipeTypes.fromID(recipeId);
+            if (category != null) {
+                List<ResourceLocation> catalysts = machine.getCatalysts();
+                if (!catalysts.contains(id)) {
+                    registry.addWorkstation(category, EmiStack.of(CustomMachineItem.makeMachineItem(id)));
                 }
-            });
-        });
+                machine.getCatalysts().forEach(catalyst -> {
+                    if (CustomMachinery.MACHINES.containsKey(catalyst)) {
+                        registry.addWorkstation(category, EmiStack.of(CustomMachineItem.makeMachineItem(catalyst)));
+                    } else if (BuiltInRegistries.ITEM.containsKey(catalyst)) {
+                        registry.addWorkstation(category, EmiStack.of(BuiltInRegistries.ITEM.get(catalyst).getDefaultInstance()));
+                    }
+                });
+            }
+        }));
     }
 }

@@ -79,7 +79,9 @@ public abstract class AbstractEMIRecipeCategory<T extends IMachineRecipe> implem
         int maxY = 0;
         List<IGuiElement> elements = this.machine.getJeiElements().isEmpty() ? this.machine.getGuiElements() : this.machine.getJeiElements();
         for(IGuiElement element : elements) {
-            if(!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()) || !element.showInJei())
+            if(!element.showInJei())
+                continue;
+            if(!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()))
                 continue;
             minX = Math.min(minX, element.getX());
             minY = Math.min(minY, element.getY());
@@ -143,17 +145,18 @@ public abstract class AbstractEMIRecipeCategory<T extends IMachineRecipe> implem
 
         // GUI element
         elements.stream()
-                .filter(element -> GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()) && element.showInJei())
+                .filter(element -> {
+                    if(!element.showInJei())
+                        return false;
+                    return GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType());
+                })
                 .sorted(Comparators.GUI_ELEMENTS_COMPARATOR.reversed())
-                .forEach(element -> {
-                    widgets.add(new GuiElementWidget(element, recipe, offsetX, offsetY));
-                });
+                .forEach(element -> widgets.add(new GuiElementWidget(element, recipe, offsetX, offsetY)));
 
         // line
         if(hasInfoRow) {
-            widgets.addDrawable(0, rowY, width, 1, (graphics, mouseX, mouseY, delta) -> {
-                graphics.fill(-3, 0, width + 3, 1, 0x30000000);
-            });
+            widgets.addDrawable(0, rowY, width, 1, (graphics, mouseX, mouseY, delta) ->
+                    graphics.fill(-3, 0, width + 3, 1, 0x30000000));
         }
 
         // ingredient slots
@@ -174,12 +177,14 @@ public abstract class AbstractEMIRecipeCategory<T extends IMachineRecipe> implem
                     }
                     // tooltip
                     final RequirementDisplayInfo finalInfo = info;
-                    widgets.addDrawable(x, y, ICON_SIZE, ICON_SIZE, (graphics, mx, my, delta) -> {
-                        finalInfo.renderIcon(graphics, ICON_SIZE);
-                    }).tooltipText(finalInfo.getTooltips().stream()
-                            .filter(pair -> pair.getSecond().shouldDisplay(Minecraft.getInstance().player, Minecraft.getInstance().options.advancedItemTooltips))
-                            .map(Pair::getFirst)
-                            .collect(Collectors.toList()));
+                    widgets.addDrawable(x, y, ICON_SIZE, ICON_SIZE,
+                                    (graphics, mx, my, delta) -> finalInfo.renderIcon(graphics, ICON_SIZE))
+                            .tooltipText(finalInfo.getTooltips()
+                                    .stream()
+                                    .filter(pair -> pair.getSecond()
+                                            .shouldDisplay(Minecraft.getInstance().player, Minecraft.getInstance().options.advancedItemTooltips))
+                                    .map(Pair::getFirst)
+                                    .collect(Collectors.toList()));
                 }
             }
         }

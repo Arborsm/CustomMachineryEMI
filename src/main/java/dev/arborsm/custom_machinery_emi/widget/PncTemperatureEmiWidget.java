@@ -16,14 +16,12 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 public class PncTemperatureEmiWidget extends Widget {
-    
-    private final HeatGuiElement element;
+
     private final IntRange range;
     private final WidgetTemperature temperatureWidget;
     private final int x, y, width, height;
     
     public PncTemperatureEmiWidget(HeatGuiElement element, IntRange range, int offsetX, int offsetY) {
-        this.element = element;
         this.range = range;
         this.x = element.getX() - offsetX;
         this.y = element.getY() - offsetY;
@@ -73,8 +71,8 @@ public class PncTemperatureEmiWidget extends Widget {
     
     public static PncTemperatureEmiWidget fromWrappers(HeatGuiElement element, List<EmiIngredientWrapper> wrappers, int offsetX, int offsetY) {
         for (EmiIngredientWrapper wrapper : wrappers) {
-            if (wrapper instanceof PncTemperatureEmiWrapper tempWrapper) {
-                return new PncTemperatureEmiWidget(element, tempWrapper.getRange(), offsetX, offsetY);
+            if (wrapper instanceof PncTemperatureEmiWrapper(IntRange range)) {
+                return new PncTemperatureEmiWidget(element, range, offsetX, offsetY);
             }
         }
         return null;

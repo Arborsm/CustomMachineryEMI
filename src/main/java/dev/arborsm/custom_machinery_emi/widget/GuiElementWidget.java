@@ -40,9 +40,12 @@ public class GuiElementWidget extends Widget {
     
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        if (!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()) || !element.showInJei())
+        if (!element.showInJei())
             return;
-            
+
+        if (!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()))
+            return;
+        
         IJEIElementRenderer<IGuiElement> renderer = GuiElementJEIRendererRegistry.getJEIRenderer(element.getType());
         
         graphics.pose().pushPose();
@@ -53,9 +56,12 @@ public class GuiElementWidget extends Widget {
     
     @Override
     public List<ClientTooltipComponent> getTooltip(int mouseX, int mouseY) {
-        if (!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()) || !element.showInJei())
+        if (!element.showInJei())
             return List.of();
-            
+        
+        if (!GuiElementJEIRendererRegistry.hasJEIRenderer(element.getType()))
+            return List.of();
+        
         IJEIElementRenderer<IGuiElement> renderer = GuiElementJEIRendererRegistry.getJEIRenderer(element.getType());
         
         int adjustedX = mouseX + offsetX;
