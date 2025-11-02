@@ -6,18 +6,23 @@ import dev.arborsm.custom_machinery_emi.api.EmiIngredientWrapper;
 import dev.arborsm.custom_machinery_emi.api.EmiStackHelper;
 import dev.arborsm.custom_machinery_emi.api.WrapperCreator;
 import dev.arborsm.custom_machinery_emi.api.wrapper.*;
-import dev.arborsm.custom_machinery_emi.ars.SourceEmiWidget;
-import dev.arborsm.custom_machinery_emi.mekanism.ChemicalEmiWidget;
-import dev.arborsm.custom_machinery_emi.mekanism.HeatEmiWidget;
-import dev.arborsm.custom_machinery_emi.mekanism.TemperatureEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.SourceEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.ChemicalEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.HeatEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.TemperatureEmiWidget;
 import dev.arborsm.custom_machinery_emi.widget.EnergyEmiWidget;
 import dev.arborsm.custom_machinery_emi.widget.ExperienceEmiWidget;
 import dev.arborsm.custom_machinery_emi.widget.FluidTankWidget;
+import dev.arborsm.custom_machinery_emi.widget.PncHeatEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.PncPressureEmiWidget;
+import dev.arborsm.custom_machinery_emi.widget.PncTemperatureEmiWidget;
 import dev.emi.emi.api.recipe.EmiRecipeCategory;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
+import es.degrassi.custommachineryars.client.integration.jei.source.Source;
 import es.degrassi.custommachineryars.guielement.SourceGuiElement;
+import fr.frinn.custommachinery.api.component.IMachineComponentTemplate;
 import fr.frinn.custommachinery.api.guielement.IGuiElement;
 import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
 import fr.frinn.custommachinery.common.component.item.ItemMachineComponent;
@@ -29,8 +34,15 @@ import fr.frinn.custommachinery.common.guielement.SlotGuiElement;
 import fr.frinn.custommachinery.common.init.Registration;
 import fr.frinn.custommachinery.common.machine.CustomMachine;
 import fr.frinn.custommachinery.impl.util.DoubleRange;
+import fr.frinn.custommachinerymekanism.client.jei.heat.Heat;
+import fr.frinn.custommachinerymekanism.common.guielement.ChemicalGuiElement;
 import fr.frinn.custommachinerymekanism.common.guielement.HeatGuiElement;
+import fr.frinn.custommachinerypnc.common.component.PressureMachineComponent;
+import mekanism.api.MekanismAPI;
+import mekanism.api.chemical.Chemical;
+import mekanism.api.chemical.ChemicalStack;
 import mekanism.common.util.UnitDisplayUtils;
+import fr.frinn.custommachinerypnc.common.guielement.PressureGuiElement;
 import net.minecraft.world.item.crafting.RecipeType;
 
 import net.neoforged.fml.ModList;
@@ -47,9 +59,8 @@ public class CustomMachineryRecipeCategory extends AbstractEMIRecipeCategory<Cus
     public CustomMachineryRecipeCategory(CustomMachine machine, EmiRecipeCategory category, CustomMachineRecipe recipe) {
         super(machine, category, recipe);
         ImmutableList.Builder<EmiIngredientWrapper> wrappersBuilder = ImmutableList.builder();
-        recipe.getDisplayInfoRequirements().forEach(requirement -> {
-            WrapperCreator.createWrapper(requirement, recipe).ifPresent(wrappersBuilder::add);
-        });
+        recipe.getDisplayInfoRequirements().forEach(requirement ->
+                WrapperCreator.createWrapper(requirement, recipe).ifPresent(wrappersBuilder::add));
         this.wrappers = wrappersBuilder.build();
     }
 
@@ -92,6 +103,8 @@ public class CustomMachineryRecipeCategory extends AbstractEMIRecipeCategory<Cus
             if(handleArsNouveauSource(widgets, element, remainingWrappers)) continue;
             if(handleMekanismHeat(widgets, element, remainingWrappers)) continue;
             if(handleMekanismChemical(widgets, element, remainingWrappers)) continue;
+            if(handlePncHeat(widgets, element, remainingWrappers)) continue;
+            if(handlePncPressure(widgets, element, remainingWrappers)) continue;
             
             if(element instanceof SlotGuiElement slotElement && 
                element.getType() == Registration.SLOT_GUI_ELEMENT.get()) {
@@ -267,140 +280,167 @@ public class CustomMachineryRecipeCategory extends AbstractEMIRecipeCategory<Cus
         if (!ModList.get().isLoaded("custommachineryars")) {
             return false;
         }
-        
-        try {
-            Class<?> sourceElementClass = Class.forName("es.degrassi.custommachineryars.guielement.SourceGuiElement");
-            
-            if (!sourceElementClass.isInstance(element)) {
-                return false;
+
+        if (!(element instanceof SourceGuiElement sourceGuiElement)) {
+            return false;
+        }
+
+        Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
+        while(iterator.hasNext()) {
+            EmiIngredientWrapper wrapper = iterator.next();
+            if (wrapper instanceof dev.arborsm.custom_machinery_emi.api.wrapper.SourceEmiWrapper sourceWrapper) {
+                var source = new Source(sourceWrapper.amount(), sourceWrapper.isPerTick());
+                SourceEmiWidget widget = new SourceEmiWidget(sourceGuiElement, source, sourceWrapper.recipeTime(), sourceWrapper.isInput(), offsetX, offsetY);
+                widgets.add(widget);
+                iterator.remove();
+                return true;
             }
-            
-            Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
-            while(iterator.hasNext()) {
-                EmiIngredientWrapper wrapper = iterator.next();
-                if (wrapper instanceof dev.arborsm.custom_machinery_emi.api.wrapper.SourceEmiWrapper sourceWrapper) {
-                    try {
-                        Object sourceGuiElement = sourceElementClass.cast(element);
-                        Object source = createSource(sourceWrapper);
-                        SourceEmiWidget widget = new SourceEmiWidget((SourceGuiElement) sourceGuiElement, 
-                            (es.degrassi.custommachineryars.client.integration.jei.source.Source) source,
-                            sourceWrapper.recipeTime(),
-                            sourceWrapper.isInput(),
-                            offsetX, offsetY);
-                        widgets.add(widget);
-                        iterator.remove();
-                        return true;
-                    } catch (Exception e) {
-                        // Failed to create widget
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ars Nouveau requirement structure different
         }
         return false;
-    }
-    
-    private Object createSource(dev.arborsm.custom_machinery_emi.api.wrapper.SourceEmiWrapper wrapper) throws Exception {
-        Class<?> sourceClass = Class.forName("es.degrassi.custommachineryars.client.integration.jei.source.Source");
-        java.lang.reflect.Constructor<?> constructor = sourceClass.getConstructor(int.class, boolean.class);
-        return constructor.newInstance(wrapper.amount(), wrapper.isPerTick());
     }
 
     private boolean handleMekanismHeat(WidgetHolder widgets, IGuiElement element, List<EmiIngredientWrapper> remainingWrappers) {
         if (!ModList.get().isLoaded("custommachinerymekanism")) {
             return false;
         }
-        
-        try {
-            Class<?> heatElementClass = Class.forName("fr.frinn.custommachinerymekanism.common.guielement.HeatGuiElement");
-            
-            if (!heatElementClass.isInstance(element)) {
-                return false;
+
+        if (!(element instanceof HeatGuiElement heatGuiElement)) {
+            return false;
+        }
+
+        Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
+        while (iterator.hasNext()) {
+            EmiIngredientWrapper wrapper = iterator.next();
+            if (wrapper instanceof HeatEmiWrapper(
+                    RequirementIOMode mode, double amount, double chance, boolean isPerTick
+            )) {
+                var heat = new Heat(amount, chance, isPerTick, mode);
+                var widget = new HeatEmiWidget(heatGuiElement, heat, offsetX, offsetY);
+                widgets.add(widget);
+                iterator.remove();
+                return true;
+            } else if (wrapper instanceof TemperatureEmiWrapper(
+                    DoubleRange temp, UnitDisplayUtils.TemperatureUnit unit
+            )) {
+                TemperatureEmiWidget widget = new TemperatureEmiWidget(heatGuiElement, temp, unit, offsetX, offsetY);
+                widgets.add(widget);
+                iterator.remove();
+                return true;
             }
-            
-            Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
-            while(iterator.hasNext()) {
-                EmiIngredientWrapper wrapper = iterator.next();
-                if (wrapper instanceof dev.arborsm.custom_machinery_emi.api.wrapper.HeatEmiWrapper heatWrapper) {
-                    Object heat = createHeat(heatWrapper);
-                    HeatEmiWidget widget = new HeatEmiWidget((HeatGuiElement) element, 
-                        (fr.frinn.custommachinerymekanism.client.jei.heat.Heat) heat,
-                        offsetX, offsetY);
-                    widgets.add(widget);
-                    iterator.remove();
-                    return true;
-                } else if (wrapper instanceof TemperatureEmiWrapper(
-                        DoubleRange temp,
-                        UnitDisplayUtils.TemperatureUnit unit
-                )) {
-                    TemperatureEmiWidget widget = new TemperatureEmiWidget((HeatGuiElement) element,
-                            temp,
-                            unit,
-                        offsetX, offsetY);
-                    widgets.add(widget);
-                    iterator.remove();
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            // Mekanism requirement structure different
         }
         return false;
-    }
-    
-    private Object createHeat(dev.arborsm.custom_machinery_emi.api.wrapper.HeatEmiWrapper wrapper) throws Exception {
-        Class<?> heatClass = Class.forName("fr.frinn.custommachinerymekanism.client.jei.heat.Heat");
-        java.lang.reflect.Constructor<?> constructor = heatClass.getConstructor(
-            double.class, double.class, boolean.class, RequirementIOMode.class);
-        return constructor.newInstance(wrapper.amount(), wrapper.chance(),
-            wrapper.isPerTick(), wrapper.mode());
     }
 
     private boolean handleMekanismChemical(WidgetHolder widgets, IGuiElement element, List<EmiIngredientWrapper> remainingWrappers) {
         if (!ModList.get().isLoaded("custommachinerymekanism")) {
             return false;
         }
-        
-        try {
-            Class<?> chemicalElementClass = Class.forName("fr.frinn.custommachinerymekanism.common.guielement.ChemicalGuiElement");
-            
-            if (!chemicalElementClass.isInstance(element)) {
-                return false;
+
+        if (!(element instanceof ChemicalGuiElement)) {
+            return false;
+        }
+
+        Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
+        while(iterator.hasNext()) {
+            EmiIngredientWrapper wrapper = iterator.next();
+            if (wrapper instanceof ChemicalEmiWrapper(
+                    RequirementIOMode mode, Chemical chemical, long amount, double chance,
+                    boolean isPerTick, String tank
+            )) {
+                var chemicalStack = new ChemicalStack(MekanismAPI.CHEMICAL_REGISTRY.wrapAsHolder(chemical), amount);
+                ChemicalEmiWidget widget = new ChemicalEmiWidget(element, chemicalStack,
+                        mode,
+                        chance,
+                        isPerTick,
+                        tank,
+                        offsetX, offsetY);
+                widgets.add(widget);
+                iterator.remove();
+                return true;
             }
-            
-            Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
-            while(iterator.hasNext()) {
-                EmiIngredientWrapper wrapper = iterator.next();
-                if (wrapper instanceof dev.arborsm.custom_machinery_emi.api.wrapper.ChemicalEmiWrapper chemicalWrapper) {
-                    try {
-                        Object chemicalStack = createChemicalStack(chemicalWrapper);
-                        ChemicalEmiWidget widget = new ChemicalEmiWidget(element, chemicalStack,
-                            chemicalWrapper.mode(),
-                            chemicalWrapper.chance(),
-                            chemicalWrapper.isPerTick(),
-                            chemicalWrapper.tank(),
-                            offsetX, offsetY);
-                        widgets.add(widget);
-                        iterator.remove();
-                        return true;
-                    } catch (Exception e) {
-                        // Failed to create widget
-                    }
+        }
+
+        return false;
+    }
+
+    private boolean handlePncHeat(WidgetHolder widgets, IGuiElement element, List<EmiIngredientWrapper> remainingWrappers) {
+        if (!ModList.get().isLoaded("custommachinerypnc")) {
+            return false;
+        }
+        
+        if (!(element instanceof fr.frinn.custommachinerypnc.common.guielement.HeatGuiElement)) {
+            return false;
+        }
+        
+        Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
+        while(iterator.hasNext()) {
+            EmiIngredientWrapper wrapper = iterator.next();
+            if (wrapper instanceof PncHeatEmiWrapper) {
+                PncHeatEmiWidget widget = PncHeatEmiWidget.fromWrappers(
+                    (fr.frinn.custommachinerypnc.common.guielement.HeatGuiElement) element,
+                    remainingWrappers,
+                    offsetX, offsetY,
+                    recipe.getRecipeTime()
+                );
+                if (widget != null) {
+                    widgets.add(widget);
+                    iterator.remove();
+                    return true;
+                }
+            } else if (wrapper instanceof PncTemperatureEmiWrapper) {
+                PncTemperatureEmiWidget widget = PncTemperatureEmiWidget.fromWrappers(
+                    (fr.frinn.custommachinerypnc.common.guielement.HeatGuiElement) element,
+                    remainingWrappers,
+                    offsetX, offsetY
+                );
+                if (widget != null) {
+                    widgets.add(widget);
+                    iterator.remove();
+                    return true;
                 }
             }
-        } catch (Exception e) {
-            // Mekanism requirement structure different
         }
         return false;
     }
-    
-    private Object createChemicalStack(dev.arborsm.custom_machinery_emi.api.wrapper.ChemicalEmiWrapper wrapper) throws Exception {
-        Class<?> chemicalStackClass = Class.forName("mekanism.api.chemical.ChemicalStack");
-        Class<?> holderClass = Class.forName("net.minecraft.core.Holder");
-        Object holder = holderClass.getMethod("direct", Object.class).invoke(null, wrapper.chemical());
-        java.lang.reflect.Constructor<?> constructor = chemicalStackClass.getConstructor(holderClass, long.class);
-        //noinspection JavaReflectionInvocation
-        return constructor.newInstance(holder, wrapper.amount());
+
+    private boolean handlePncPressure(WidgetHolder widgets, IGuiElement element, List<EmiIngredientWrapper> remainingWrappers) {
+        if (!ModList.get().isLoaded("custommachinerypnc")) {
+            return false;
+        }
+        
+        if (!(element instanceof PressureGuiElement)) {
+            return false;
+        }
+
+        IMachineComponentTemplate<?> template =
+                recipeHelper.getComponentForElement((fr.frinn.custommachinery.api.guielement.IComponentGuiElement<?>) element).orElse(null);
+
+        float danger = 4.0f;
+        float critical = 5.0f;
+
+        if (template instanceof PressureMachineComponent.Template pressureTemplate) {
+            danger = pressureTemplate.danger();
+            critical = pressureTemplate.critical();
+        }
+
+        Iterator<EmiIngredientWrapper> iterator = remainingWrappers.iterator();
+        while(iterator.hasNext()) {
+            EmiIngredientWrapper wrapper = iterator.next();
+            if (wrapper instanceof PncPressureEmiWrapper) {
+                PncPressureEmiWidget widget = PncPressureEmiWidget.fromWrappers(
+                        (PressureGuiElement) element,
+                        remainingWrappers,
+                        danger,
+                        critical,
+                        offsetX, offsetY
+                );
+                if (widget != null) {
+                    widgets.add(widget);
+                    iterator.remove();
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

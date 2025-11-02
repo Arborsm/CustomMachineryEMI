@@ -1,4 +1,4 @@
-package dev.arborsm.custom_machinery_emi.ars;
+package dev.arborsm.custom_machinery_emi.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.emi.emi.api.widget.Bounds;

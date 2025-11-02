@@ -97,6 +97,14 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = "Mod maven"
+        url = "https://modmaven.dev/"
+        content {
+            includeGroup "mcjty.theoneprobe"
+            includeGroup "me.desht.pneumaticcraft"
+        }
+    }
     mavenLocal()
 }
 
@@ -177,6 +185,9 @@ dependencies {
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     compileOnly("com.tterrag.registrate:Registrate:${registrate_version}")
     compileOnly "curse.maven:custom-machinery-create-860747:6516361"
+
+    compileOnly("me.desht.pneumaticcraft:pneumaticcraft-repressurized:${pnc_version}+mc${minecraft_version}-SNAPSHOT") {transitive = false}
+    compileOnly "curse.maven:custom-machinery-pneumaticcraft-1093049:6982604"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

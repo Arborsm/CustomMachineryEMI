@@ -1,4 +1,4 @@
-package dev.arborsm.custom_machinery_emi.mekanism;
+package dev.arborsm.custom_machinery_emi.widget;
 
 import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.Widget;

@@ -7,6 +7,7 @@ import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
 import fr.frinn.custommachinery.common.requirement.*;
 import fr.frinn.custommachinery.impl.integration.jei.Experience;
 import fr.frinn.custommachinery.impl.util.DoubleRange;
+import fr.frinn.custommachinery.impl.util.IntRange;
 import mekanism.common.util.UnitDisplayUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -22,6 +23,7 @@ import fr.frinn.custommachinerymekanism.common.requirement.ChemicalPerTickRequir
 import fr.frinn.custommachinerymekanism.common.requirement.HeatRequirement;
 import fr.frinn.custommachinerymekanism.common.requirement.HeatPerTickRequirement;
 import fr.frinn.custommachinerymekanism.common.requirement.TemperatureRequirement;
+import fr.frinn.custommachinerypnc.common.requirement.PressureRequirement;
 import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 public class WrapperCreator {
@@ -83,7 +85,8 @@ public class WrapperCreator {
             }
         }
 
-        if (req instanceof ItemFilterRequirement(Ingredient ingredient, String slot
+        if (req instanceof ItemFilterRequirement(
+                Ingredient ingredient, String slot
         )) {
             return Optional.of(new ItemFilterEmiWrapper(ingredient, slot));
         }
@@ -113,6 +116,23 @@ public class WrapperCreator {
             Optional<EmiIngredientWrapper> tempResult = handleMekanismTemperature(req);
             if (tempResult.isPresent()) {
                 return tempResult;
+            }
+        }
+
+        if (ModList.get().isLoaded("custommachinerypnc")) {
+            Optional<EmiIngredientWrapper> pncHeatResult = handlePncHeat(req, requirement);
+            if (pncHeatResult.isPresent()) {
+                return pncHeatResult;
+            }
+
+            Optional<EmiIngredientWrapper> pncPressureResult = handlePncPressure(req, requirement);
+            if (pncPressureResult.isPresent()) {
+                return pncPressureResult;
+            }
+
+            Optional<EmiIngredientWrapper> pncTempResult = handlePncTemperature(req);
+            if (pncTempResult.isPresent()) {
+                return pncTempResult;
             }
         }
 
@@ -168,6 +188,40 @@ public class WrapperCreator {
                 UnitDisplayUtils.TemperatureUnit unit
         )) {
             return Optional.of(new TemperatureEmiWrapper(temp, unit));
+        }
+
+        return Optional.empty();
+    }
+
+    private static Optional<EmiIngredientWrapper> handlePncHeat(Object req, RecipeRequirement<?, ?> requirement) {
+        if (req instanceof fr.frinn.custommachinerypnc.common.requirement.HeatRequirement(
+                RequirementIOMode mode, int amount
+        )) {
+            return Optional.of(new PncHeatEmiWrapper(mode, amount, requirement.chance(), false));
+        }
+
+        if (req instanceof fr.frinn.custommachinerypnc.common.requirement.HeatPerTickRequirement(
+                RequirementIOMode mode, int amount
+        )) {
+            return Optional.of(new PncHeatEmiWrapper(mode, amount, requirement.chance(), true));
+        }
+
+        return Optional.empty();
+    }
+
+    private static Optional<EmiIngredientWrapper> handlePncPressure(Object req, RecipeRequirement<?, ?> requirement) {
+        if (req instanceof PressureRequirement(
+                RequirementIOMode mode, float minPressure, float maxPressure, int volume
+        )) {
+            return Optional.of(new PncPressureEmiWrapper(mode, minPressure, maxPressure, volume, requirement.chance()));
+        }
+
+        return Optional.empty();
+    }
+
+    private static Optional<EmiIngredientWrapper> handlePncTemperature(Object req) {
+        if (req instanceof fr.frinn.custommachinerypnc.common.requirement.TemperatureRequirement(IntRange range)) {
+            return Optional.of(new PncTemperatureEmiWrapper(range));
         }
 
         return Optional.empty();
