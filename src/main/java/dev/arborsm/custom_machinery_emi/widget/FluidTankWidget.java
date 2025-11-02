@@ -15,15 +15,12 @@ import net.minecraft.world.level.material.Fluid;
  * Custom fluid tank widget that renders fluid across the entire rectangle area
  */
 public class FluidTankWidget extends SlotWidget {
-    
-    private final int width, height;
+
     private final long capacity;
     private EmiRecipe recipe;
     
     public FluidTankWidget(EmiIngredient stack, int x, int y, int width, int height, long capacity) {
         super(stack, x, y);
-        this.width = width;
-        this.height = height;
         this.capacity = capacity;
         // Disable background and set custom bounds
         this.bounds = new Bounds(x, y, width, height);
@@ -40,6 +37,7 @@ public class FluidTankWidget extends SlotWidget {
         return super.backgroundTexture(id, u, v);
     }
     
+    @SuppressWarnings("UnstableApiUsage")
     @Override
     public void drawStack(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         EmiIngredient ingredient = this.getStack();

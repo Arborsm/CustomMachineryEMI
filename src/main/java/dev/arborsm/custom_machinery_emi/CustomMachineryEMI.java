@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 
 @Mod(CustomMachineryEMI.MOD_ID)
 public class CustomMachineryEMI {
+
     public static final String MOD_ID = "custom_machinery_emi";
     private static final Logger LOGGER = LogUtils.getLogger();
 

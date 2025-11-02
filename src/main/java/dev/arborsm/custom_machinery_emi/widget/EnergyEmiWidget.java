@@ -1,20 +1,18 @@
 package dev.arborsm.custom_machinery_emi.widget;
 
+import dev.arborsm.custom_machinery_emi.api.EmiIngredientWrapper;
+import dev.arborsm.custom_machinery_emi.api.wrapper.EnergyEmiWrapper;
 import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.Widget;
-import fr.frinn.custommachinery.api.integration.jei.IJEIIngredientWrapper;
 import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
 import fr.frinn.custommachinery.client.ClientHandler;
-import fr.frinn.custommachinery.client.integration.jei.wrapper.EnergyIngredientWrapper;
 import fr.frinn.custommachinery.common.guielement.EnergyGuiElement;
 import fr.frinn.custommachinery.common.util.Utils;
-import fr.frinn.custommachinery.impl.integration.jei.Energy;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,49 +40,36 @@ public class EnergyEmiWidget extends Widget {
      * @return The widget if successful, null otherwise
      */
     @Nullable
-    public static EnergyEmiWidget fromWrappers(EnergyGuiElement element, List<IJEIIngredientWrapper<?>> wrappers, int offsetX, int offsetY) {
-        Iterator<IJEIIngredientWrapper<?>> iterator = wrappers.iterator();
+    public static EnergyEmiWidget fromWrappers(EnergyGuiElement element, List<EmiIngredientWrapper> wrappers, int offsetX, int offsetY) {
+        Iterator<EmiIngredientWrapper> iterator = wrappers.iterator();
         while(iterator.hasNext()) {
-            IJEIIngredientWrapper<?> wrapper = iterator.next();
-            if(wrapper instanceof EnergyIngredientWrapper) {
-                try {
-                    Field energyField = EnergyIngredientWrapper.class.getDeclaredField("energy");
-                    energyField.setAccessible(true);
-                    Energy energy = (Energy) energyField.get(wrapper);
-                    
-                    Field modeField = EnergyIngredientWrapper.class.getDeclaredField("mode");
-                    modeField.setAccessible(true);
-                    RequirementIOMode mode = (RequirementIOMode) modeField.get(wrapper);
-                    
-                    Field recipeTimeField = EnergyIngredientWrapper.class.getDeclaredField("recipeTime");
-                    recipeTimeField.setAccessible(true);
-                    int recipeTime = (Integer) recipeTimeField.get(wrapper);
-                    
-                    // Build tooltip
-                    List<Component> tooltip = new ArrayList<>();
-                    String amount = Utils.format(energy.amount());
-                    Component unit = Component.translatable("unit.energy.forge");
-                    if(energy.isPerTick()) {
-                        String totalEnergy = Utils.format(energy.amount() * recipeTime);
-                        if(mode == RequirementIOMode.INPUT)
-                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.pertick.input", totalEnergy, unit, amount, unit));
-                        else
-                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.pertick.output", totalEnergy, unit, amount, unit));
-                    } else {
-                        if(mode == RequirementIOMode.INPUT)
-                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.input", amount, unit));
-                        else
-                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.output", amount, unit));
-                    }
-                    
-                    int x = element.getX() - offsetX + 1;
-                    int y = element.getY() - offsetY + 1;
-                    
-                    iterator.remove();
-                    return new EnergyEmiWidget(element, x, y, tooltip);
-                } catch (Exception e) {
-                    // Failed to extract energy data
+            EmiIngredientWrapper wrapper = iterator.next();
+            if(wrapper instanceof EnergyEmiWrapper energyWrapper) {
+                // Build tooltip
+                List<Component> tooltip = new ArrayList<>();
+                int amount = energyWrapper.amount();
+                String amountStr = Utils.format(amount);
+                Component unit = Component.translatable("unit.energy.forge");
+                RequirementIOMode mode = energyWrapper.mode();
+                
+                if(energyWrapper.isPerTick()) {
+                    String totalEnergy = Utils.format(amount * energyWrapper.recipeTime());
+                    if(mode == RequirementIOMode.INPUT)
+                        tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.pertick.input", totalEnergy, unit, amountStr, unit));
+                    else
+                        tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.pertick.output", totalEnergy, unit, amountStr, unit));
+                } else {
+                    if(mode == RequirementIOMode.INPUT)
+                        tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.input", amountStr, unit));
+                    else
+                        tooltip.add(Component.translatable("custommachinery.jei.ingredient.energy.output", amountStr, unit));
                 }
+                
+                int x = element.getX() - offsetX + 1;
+                int y = element.getY() - offsetY + 1;
+                
+                iterator.remove();
+                return new EnergyEmiWidget(element, x, y, tooltip);
             }
         }
         return null;

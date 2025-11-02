@@ -1,10 +1,10 @@
 package dev.arborsm.custom_machinery_emi.widget;
 
+import dev.arborsm.custom_machinery_emi.api.EmiIngredientWrapper;
+import dev.arborsm.custom_machinery_emi.api.wrapper.ExperienceEmiWrapper;
 import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.Widget;
-import fr.frinn.custommachinery.api.integration.jei.IJEIIngredientWrapper;
 import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
-import fr.frinn.custommachinery.client.integration.jei.wrapper.ExperienceIngredientWrapper;
 import fr.frinn.custommachinery.common.guielement.ExperienceGuiElement;
 import fr.frinn.custommachinery.common.util.Color;
 import fr.frinn.custommachinery.common.util.ExperienceUtils;
@@ -16,7 +16,6 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -46,63 +45,47 @@ public class ExperienceEmiWidget extends Widget {
      * @return The widget if successful, null otherwise
      */
     @Nullable
-    public static ExperienceEmiWidget fromWrappers(ExperienceGuiElement element, List<IJEIIngredientWrapper<?>> wrappers, int offsetX, int offsetY) {
-        Iterator<IJEIIngredientWrapper<?>> iterator = wrappers.iterator();
+    public static ExperienceEmiWidget fromWrappers(ExperienceGuiElement element, List<EmiIngredientWrapper> wrappers, int offsetX, int offsetY) {
+        Iterator<EmiIngredientWrapper> iterator = wrappers.iterator();
         while(iterator.hasNext()) {
-            IJEIIngredientWrapper<?> wrapper = iterator.next();
-            if(wrapper instanceof ExperienceIngredientWrapper) {
-                try {
-                    Field experienceField = ExperienceIngredientWrapper.class.getDeclaredField("experience");
-                    experienceField.setAccessible(true);
-                    Experience experience = (Experience) experienceField.get(wrapper);
-                    
-                    Field modeField = ExperienceIngredientWrapper.class.getDeclaredField("mode");
-                    modeField.setAccessible(true);
-                    RequirementIOMode mode = (RequirementIOMode) modeField.get(wrapper);
-                    
-                    Field recipeTimeField = ExperienceIngredientWrapper.class.getDeclaredField("recipeTime");
-                    recipeTimeField.setAccessible(true);
-                    int recipeTime = (Integer) recipeTimeField.get(wrapper);
-                    
-                    // Build tooltip
-                    List<Component> tooltip = new ArrayList<>();
-                    String amount = Utils.format(experience.xp());
-                    if(experience.isPoints()) {
-                        if(experience.isPerTick()) {
-                            String totalExperience = Utils.format(experience.xp() * recipeTime);
-                            if(mode == RequirementIOMode.INPUT)
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.input", totalExperience, "XP", amount, "XP"));
-                            else
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.output", totalExperience, "XP", amount, "XP"));
-                        } else {
-                            if(mode == RequirementIOMode.INPUT)
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.input", amount, "XP"));
-                            else
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.output", amount, "XP"));
-                        }
+            EmiIngredientWrapper wrapper = iterator.next();
+            if(wrapper instanceof ExperienceEmiWrapper(RequirementIOMode mode, Experience experience1, int recipeTime)) {
+                // Build tooltip
+                List<Component> tooltip = new ArrayList<>();
+                String amount = Utils.format(experience1.xp());
+                if(experience1.isPoints()) {
+                    if(experience1.isPerTick()) {
+                        String totalExperience = Utils.format(experience1.xp() * recipeTime);
+                        if(mode == RequirementIOMode.INPUT)
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.input", totalExperience, "XP", amount, "XP"));
+                        else
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.output", totalExperience, "XP", amount, "XP"));
                     } else {
-                        if(experience.isPerTick()) {
-                            String totalExperience = Utils.format(experience.getLevels() * recipeTime);
-                            if(mode == RequirementIOMode.INPUT)
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.input", totalExperience, "Level(s)", amount, "Level(s)"));
-                            else
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.output", totalExperience, "Level(s)", amount, "Level(s)"));
-                        } else {
-                            if(mode == RequirementIOMode.INPUT)
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.input", amount, "Level(s)"));
-                            else
-                                tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.output", amount, "Level(s)"));
-                        }
+                        if(mode == RequirementIOMode.INPUT)
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.input", amount, "XP"));
+                        else
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.output", amount, "XP"));
                     }
-                    
-                    int x = element.getX() - offsetX + 1;
-                    int y = element.getY() - offsetY + 1;
-                    
-                    iterator.remove();
-                    return new ExperienceEmiWidget(element, experience, x, y, tooltip);
-                } catch (Exception e) {
-                    // Failed to extract experience data
+                } else {
+                    if(experience1.isPerTick()) {
+                        String totalExperience = Utils.format(experience1.getLevels() * recipeTime);
+                        if(mode == RequirementIOMode.INPUT)
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.input", totalExperience, "Level(s)", amount, "Level(s)"));
+                        else
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.pertick.output", totalExperience, "Level(s)", amount, "Level(s)"));
+                    } else {
+                        if(mode == RequirementIOMode.INPUT)
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.input", amount, "Level(s)"));
+                        else
+                            tooltip.add(Component.translatable("custommachinery.jei.ingredient.xp.output", amount, "Level(s)"));
+                    }
                 }
+                
+                int x = element.getX() - offsetX + 1;
+                int y = element.getY() - offsetY + 1;
+                
+                iterator.remove();
+                return new ExperienceEmiWidget(element, experience1, x, y, tooltip);
             }
         }
         return null;

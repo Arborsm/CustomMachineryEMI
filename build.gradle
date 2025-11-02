@@ -159,25 +159,24 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     implementation "curse.maven:custom-machinery-457017:7090569"
     implementation "curse.maven:emi-580555:6420931"
-    implementation "curse.maven:jei-238222:7129287"
 
-    implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
-    implementation "com.hollingsworth.nuggets:nuggets-neoforge-1.21:${project.nuggets_version}"
-    implementation "vazkii.patchouli:Patchouli:1.21.1-${project.patchouli_version}"
+    compileOnly "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
+    compileOnly "com.hollingsworth.nuggets:nuggets-neoforge-1.21:${project.nuggets_version}"
+    compileOnly "vazkii.patchouli:Patchouli:1.21.1-${project.patchouli_version}"
     //implementation "top.theillusivec4.curios:curios-neoforge:${project.curios_version}"
-    implementation "com.hollingsworth.ars_nouveau:ars_nouveau-${project.minecraft_version}:${project.ars_version}.1214"
-    implementation "curse.maven:custom-machinery-ars-nouveau-969074:6988765"
+    compileOnly "com.hollingsworth.ars_nouveau:ars_nouveau-${project.minecraft_version}:${project.ars_version}.1214"
+    compileOnly "curse.maven:custom-machinery-ars-nouveau-969074:6988765"
 
-    implementation("mekanism:Mekanism:${mekanism_version}")
-    implementation("mekanism:Mekanism:${mekanism_version}:generators")
-    implementation "curse.maven:custom-machinery-mekanism-721079:7102843"
+    compileOnly("mekanism:Mekanism:${mekanism_version}")
+    compileOnly("mekanism:Mekanism:${mekanism_version}:generators")
+    compileOnly "curse.maven:custom-machinery-mekanism-721079:7102843"
 
-    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}-${create_build}:slim") { transitive = false }
-    implementation("net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}")
+    compileOnly("com.simibubi.create:create-${minecraft_version}:${create_version}-${create_build}:slim") { transitive = false }
+    compileOnly("net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}")
     compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
-    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
-    implementation "curse.maven:custom-machinery-create-860747:6516361"
+    compileOnly("com.tterrag.registrate:Registrate:${registrate_version}")
+    compileOnly "curse.maven:custom-machinery-create-860747:6516361"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

@@ -4,6 +4,7 @@ import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.api.widget.Widget;
 import fr.frinn.custommachinery.CustomMachinery;
 import fr.frinn.custommachinery.api.requirement.RequirementIOMode;
+import fr.frinn.custommachinerymekanism.common.guielement.ChemicalGuiElement;
 import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.text.EnumColor;
 import mekanism.client.recipe_viewer.emi.ChemicalEmiStack;
@@ -17,7 +18,6 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.network.chat.Component;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +26,7 @@ import java.util.List;
  */
 public class ChemicalEmiWidget extends Widget {
     
-    private final Object chemicalElement; // ChemicalGuiElement
-    private final RequirementIOMode mode;
+    private final ChemicalGuiElement chemicalElement; // ChemicalGuiElement
     private final double chance;
     private final boolean isPerTick;
     private final String tank;
@@ -36,27 +35,19 @@ public class ChemicalEmiWidget extends Widget {
     
     public ChemicalEmiWidget(Object chemicalElement, Object chemicalStack, RequirementIOMode mode, 
                             double chance, boolean isPerTick, String tank, int offsetX, int offsetY) {
-        this.chemicalElement = chemicalElement;
-        this.mode = mode;
+        this.chemicalElement = (ChemicalGuiElement)chemicalElement;
         this.chance = chance;
         this.isPerTick = isPerTick;
         this.tank = tank;
         this.stack = new ChemicalEmiStack((ChemicalStack)chemicalStack);
-        
-        try {
-            Class<?> elementClass = chemicalElement.getClass();
-            int elemX = (Integer) elementClass.getMethod("getX").invoke(chemicalElement);
-            int elemY = (Integer) elementClass.getMethod("getY").invoke(chemicalElement);
-            int elemWidth = (Integer) elementClass.getMethod("getWidth").invoke(chemicalElement);
-            int elemHeight = (Integer) elementClass.getMethod("getHeight").invoke(chemicalElement);
-            
-            this.x = elemX - offsetX;
-            this.y = elemY - offsetY;
-            this.width = elemWidth;
-            this.height = elemHeight;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get ChemicalGuiElement dimensions", e);
-        }
+
+        int elemX = this.chemicalElement.getX();
+        int elemY = this.chemicalElement.getY();
+        this.width = this.chemicalElement.getWidth();
+        this.height = this.chemicalElement.getHeight();
+
+        this.x = elemX - offsetX;
+        this.y = elemY - offsetY;
     }
     
     @Override
@@ -67,21 +58,12 @@ public class ChemicalEmiWidget extends Widget {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         try {
-            Class<?> elementClass = chemicalElement.getClass();
-            Object texture = elementClass.getMethod("getTexture").invoke(chemicalElement);
-            Class<?> textureClass = texture.getClass();
-            
-            Object textureLoc = textureClass.getMethod("texture").invoke(texture);
-            int u = (Integer) textureClass.getMethod("u").invoke(texture);
-            int v = (Integer) textureClass.getMethod("v").invoke(texture);
-            
-            graphics.blit(
-                (net.minecraft.resources.ResourceLocation) textureLoc,
-                x, y,
-                u, v,
-                width, height,
-                width, height
-            );
+            var texture = chemicalElement.getTexture();
+            var textureLoc = texture.texture();
+            int u = texture.u();
+            int v = texture.v();
+
+            graphics.blit(textureLoc, x, y, u, v, width, height, width, height);
             
             graphics.pose().pushPose();
             graphics.pose().translate(0.0F, 0.0F, 10.0F);
